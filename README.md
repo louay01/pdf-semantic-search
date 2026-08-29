@@ -113,4 +113,30 @@ docker run --rm pdf-semantic-search pytest -q
 - Embeddings are normalized, and FAISS inner-product search therefore acts as cosine similarity.
 - Search returns matching chunks rather than full document summaries or page renders.
 
-Possible improvements include OCR support, metadata filters, hybrid keyword/vector retrieval, and incremental indexing.
+## Limitations and trade-offs
+
+### Main limitations
+
+- Scanned PDFs are not supported because there is no OCR step.
+- Updating one document requires rebuilding the full index.
+- Results cannot be filtered by document or page, and the API returns chunks rather than complete answers or summaries.
+- `IndexFlatIP` keeps search simple and exact, but its memory use and search cost grow with the number of chunks.
+
+### When search quality may be poor
+
+Text extraction can lose table structure, columns, headers, or reading order. Fixed-size character chunks may also separate related passages. Very short or ambiguous queries, exact identifiers and numbers, specialist terminology, and content poorly represented by the embedding model may therefore produce weak results. There is currently no keyword search or relevance threshold to compensate for these cases.
+
+### Assumptions
+
+- PDFs contain extractable text and fit into a local, CPU-based workflow.
+- The document collection is small enough for a flat FAISS index and in-memory metadata.
+- Rebuilding offline and then serving a read-only index is acceptable.
+- A filename, page number, and chunk number provide enough source information for returned matches.
+
+### Improvements with more time
+
+I would add OCR fallback, structure-aware chunking, metadata filters, hybrid keyword and vector retrieval, and incremental indexing. I would also build a small labelled query set so model and chunking changes could be measured rather than judged from a few manual searches.
+
+### Production considerations
+
+For production, ingestion would run as a background job and publish versioned indexes atomically so searches never see a partially written index. Depending on scale, FAISS files and JSONL metadata could move to object storage plus a database or managed vector store. The API would also need authentication, rate limiting, input and file validation, structured logs, metrics, readiness checks, and tests for concurrent requests and index updates.
