@@ -1,0 +1,9 @@
+.git
+.gitignore
+.pytest_cache
+.venv
+data
+PDFs
+pdf_semantic_search.egg-info
+__pycache__
+*.pyc
